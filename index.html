@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TaskFlow Pro</title>
+  
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- FontAwesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    .animate-spin-slow {
+      animation: spin 3s linear infinite;
+    }
+    .toast-enter {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    .toast-enter-active {
+      transform: translateY(0);
+      opacity: 1;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="fixed bottom-4 right-4 z-[100] flex flex-col gap-2"></div>
+
+  <!-- ==================== LOGIN VIEW ==================== -->
+  <div id="loginView" class="min-h-screen flex items-center justify-center p-4 py-10">
+    <div class="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden border border-blue-100">
+      <div class="bg-blue-600 p-8 text-center text-white">
+        <i class="fa-solid fa-clock text-5xl text-blue-100 mb-4"></i>
+        <h1 class="text-3xl font-bold">TaskFlow Pro</h1>
+        <p class="text-blue-200 mt-2">Employee Time & Task Tracking</p>
+      </div>
+      <form id="loginForm" class="p-8 space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1">Employee ID</label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <i class="fa-solid fa-id-badge text-slate-400"></i>
+            </div>
+            <input type="text" id="empId" required class="pl-10 w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none" placeholder="e.g. EMP-1042" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1">Full Name</label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <i class="fa-solid fa-user text-slate-400"></i>
+            </div>
+            <input type="text" id="empName" required class="pl-10 w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none" placeholder="John Doe" />
+          </div>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1">Department</label>
+          <select id="empDept" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+            <!-- Injected via JS -->
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1">Role</label>
+          <select id="empRole" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+            <!-- Injected via JS -->
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1">Program</label>
+          <select id="empProgram" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+            <!-- Injected via JS -->
+          </select>
+        </div>
+
+        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors shadow-md hover:shadow-lg flex items-center justify-center gap-2 mt-4">
+          Secure Login <i class="fa-solid fa-chevron-right text-sm"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MAIN APP VIEW ==================== -->
+  <div id="mainView" class="hidden min-h-screen bg-slate-50 text-slate-800 font-sans flex flex-col">
+    <!-- Header -->
+    <header class="bg-white border-b border-blue-100 shadow-sm sticky top-0 z-20">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="bg-blue-600 p-2 rounded-lg">
+            <i class="fa-solid fa-clock text-white"></i>
+          </div>
+          <h1 class="text-xl font-bold text-slate-900 hidden sm:block">TaskFlow</h1>
+        </div>
+        <div class="flex items-center gap-6">
+          <div class="text-right">
+            <p id="headerUserName" class="text-sm font-semibold text-slate-900">Name (ID)</p>
+            <p id="headerDetails" class="text-xs text-slate-500">Dept | Role | Program</p>
+          </div>
+          <button id="btnLogout" class="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-red-600 transition-colors bg-slate-100 hover:bg-red-50 px-3 py-2 rounded-md">
+            <i class="fa-solid fa-right-from-bracket"></i> End Shift
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Shift Punch In Bar -->
+    <div class="bg-white border-b border-blue-100 shadow-sm relative z-10">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-4 w-full">
+          <button id="btnPunchIn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg shadow-sm transition-colors text-sm flex items-center gap-2">
+            <i class="fa-solid fa-fingerprint"></i> Punch In
+          </button>
+          
+          <div id="shiftProgressContainer" class="hidden flex-1 flex items-center gap-4">
+            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap hidden md:block">Shift Progress</span>
+            
+            <!-- Geo Date Display -->
+            <span id="shiftDateText" class="text-xs font-bold text-blue-700 bg-blue-100 px-3 py-1.5 rounded-md hidden sm:block whitespace-nowrap">
+              <i class="fa-regular fa-calendar mr-1"></i> <span id="shiftDateValue">Date</span>
+            </span>
+
+            <div class="w-full bg-slate-200 rounded-full h-3">
+              <div id="shiftProgressBar" class="bg-green-500 h-3 rounded-full transition-all duration-1000 ease-linear" style="width: 0%"></div>
+            </div>
+            <span id="shiftTimeText" class="text-sm font-mono font-bold text-slate-700 whitespace-nowrap">00:00:00 <span class="text-slate-400 font-normal">/ 9h 00m</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 flex-1 w-full">
+      
+      <!-- Active Status Banner -->
+      <div id="activeBanner" class="hidden rounded-xl p-4 shadow-sm border items-center justify-between transition-all">
+        <div class="flex items-center gap-3">
+          <div id="activeBannerIconContainer" class="text-xl">
+            <!-- Icon injected here -->
+          </div>
+          <div>
+            <p id="activeBannerText" class="font-semibold">Currently Active: ...</p>
+            <p id="activeBannerStartTime" class="text-sm opacity-80">Started at ...</p>
+          </div>
+        </div>
+        <div id="liveDuration" class="text-2xl font-mono font-bold">
+          00:00:00
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Controls Panel -->
+        <div class="lg:col-span-1 space-y-6">
+          
+          <!-- Task Controller -->
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+            <h2 class="text-lg font-bold mb-4 flex items-center gap-2">
+              <i class="fa-solid fa-list-check text-blue-600"></i> Task Management
+            </h2>
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Category</label>
+                <select id="categoryDropdown" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50">
+                  <!-- Options injected via JS -->
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Specific Task</label>
+                <select id="taskDropdown" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50">
+                  <!-- Options injected via JS -->
+                </select>
+              </div>
+
+              <button id="btnStartTask" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg flex justify-center items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                <i class="fa-solid fa-play"></i> Start Task Timing
+              </button>
+              
+              <div id="taskActiveControls" class="hidden flex-wrap gap-2">
+                <button id="btnPauseTask" class="flex-1 min-w-[120px] bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3 px-4 rounded-lg flex justify-center items-center gap-2 transition-colors">
+                  <i class="fa-solid fa-pause"></i> Pause
+                </button>
+                <button id="btnResumeTask" class="hidden flex-1 min-w-[120px] bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg flex justify-center items-center gap-2 transition-colors">
+                  <i class="fa-solid fa-play"></i> Resume
+                </button>
+                <button id="btnStopTask" class="flex-1 min-w-[120px] bg-slate-800 hover:bg-slate-900 text-white font-semibold py-3 px-4 rounded-lg flex justify-center items-center gap-2 transition-colors">
+                  <i class="fa-solid fa-check"></i> Finish Task
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Break & Emergency Controllers -->
+          <div class="grid grid-cols-2 gap-4">
+            <!-- Break -->
+            <button id="btnStartBreak" class="bg-white border border-slate-200 hover:border-amber-400 hover:bg-amber-50 text-slate-700 font-semibold py-4 px-4 rounded-xl flex flex-col justify-center items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+              <i class="fa-solid fa-mug-hot text-amber-500 text-2xl"></i>
+              <span>Take Break</span>
+            </button>
+            <button id="btnStopBreak" class="hidden bg-amber-500 hover:bg-amber-600 text-white font-semibold py-4 px-4 rounded-xl flex flex-col justify-center items-center gap-2 transition-colors shadow-sm">
+              <i class="fa-solid fa-stop text-xl"></i>
+              <span>End Break</span>
+            </button>
+
+            <!-- Emergency -->
+            <button id="btnStartEmergency" class="bg-white border border-slate-200 hover:border-red-400 hover:bg-red-50 text-slate-700 font-semibold py-4 px-4 rounded-xl flex flex-col justify-center items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+              <i class="fa-solid fa-truck-medical text-red-500 text-2xl"></i>
+              <span>Emergency</span>
+            </button>
+            <button id="btnStopEmergency" class="hidden bg-red-600 hover:bg-red-700 text-white font-semibold py-4 px-4 rounded-xl flex flex-col justify-center items-center gap-2 transition-colors shadow-sm">
+              <i class="fa-solid fa-stop text-xl"></i>
+              <span>End Emergency</span>
+            </button>
+          </div>
+
+           <!-- EOD Mail Button -->
+           <div class="pt-2">
+            <button id="btnEodMail" class="w-full bg-white border-2 border-blue-600 text-blue-700 hover:bg-blue-50 font-bold py-3 px-4 rounded-lg flex justify-center items-center gap-2 transition-colors">
+              <i class="fa-solid fa-envelope"></i> Copy Report & Open Mail
+            </button>
+            <p class="text-xs text-center text-slate-500 mt-2">
+              Auto-copies the HTML table. Just hit Paste (Ctrl+V) in your email body!
+            </p>
+          </div>
+
+        </div>
+
+        <!-- Activity Log Panel -->
+        <div class="lg:col-span-2">
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden h-full flex flex-col">
+            <div class="p-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+              <h2 class="text-lg font-bold flex items-center gap-2">
+                <i class="fa-solid fa-clock-rotate-left text-blue-600"></i> Today's Log
+              </h2>
+              <span id="logCount" class="bg-blue-100 text-blue-800 text-xs font-bold px-2.5 py-1 rounded-full">
+                0 Entries
+              </span>
+            </div>
+            
+            <div class="p-0 overflow-x-auto overflow-y-auto max-h-[600px] flex-1 relative">
+              
+              <!-- Empty State -->
+              <div id="emptyLogState" class="h-full flex flex-col items-center justify-center text-slate-400 p-12 min-h-[300px]">
+                <i class="fa-solid fa-clipboard-list text-5xl mb-3 opacity-20"></i>
+                <p>No activities logged yet today.</p>
+              </div>
+
+              <!-- Log Table -->
+              <table id="logTable" class="hidden w-full text-sm text-left">
+                <thead class="text-xs text-slate-500 uppercase bg-slate-50 sticky top-0">
+                  <tr>
+                    <th class="px-6 py-3 whitespace-nowrap">Type</th>
+                    <th class="px-6 py-3 whitespace-nowrap">Category</th>
+                    <th class="px-6 py-3 min-w-[200px]">Task / Activity</th>
+                    <th class="px-6 py-3 whitespace-nowrap">Start</th>
+                    <th class="px-6 py-3 whitespace-nowrap">End</th>
+                    <th class="px-6 py-3 whitespace-nowrap">Duration</th>
+                  </tr>
+                </thead>
+                <tbody id="logTableBody">
+                  <!-- Rows injected here -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- ==================== EMERGENCY REASON MODAL ==================== -->
+  <div id="emergencyModal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+      <div class="bg-red-600 p-4 flex items-center gap-3">
+        <i class="fa-solid fa-triangle-exclamation text-white text-xl"></i>
+        <h3 class="text-lg font-bold text-white">Emergency Log Complete</h3>
+      </div>
+      <div class="p-6 space-y-4">
+        <p class="text-sm text-slate-600">
+          Please provide a brief reason for your emergency time away from the keyboard. This will be included in your EOD report.
+        </p>
+        <textarea id="emergencyReasonInput" placeholder="Reason for emergency..." class="w-full p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none resize-none h-24"></textarea>
+        <button id="btnSubmitEmergency" class="w-full bg-slate-800 hover:bg-slate-900 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg transition-colors">
+          Save & Resume Work
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden div to hold HTML for clipboard copying -->
+  <div id="clipboardHolder" class="absolute left-[-9999px] top-[-9999px]" aria-hidden="true"></div>
+
+  <!-- ==================== JAVASCRIPT ==================== -->
+  <script>
+    // --- CONFIGURATION ---
+    const EMAILS = "manager1@company.com,manager2@company.com,manager3@company.com";
+    const MAX_BREAK_MINUTES = 60;
+    const SHIFT_DURATION_MS = 9 * 60 * 60 * 1000; // 9 hours
+    
+    // Dropdown Data
+    const DEPARTMENTS = ["IT / Technology", "Human Resources", "Finance & Accounts", "Operations", "Sales & Marketing"];
+    const ROLES = ["Analyst", "Developer / Engineer", "Manager / Lead", "Support Specialist", "Administrator"];
+    const PROGRAMS = ["Alpha Initiative", "Beta Program", "Gamma Project", "Delta Deployment", "Epsilon Operations"];
+    
+    const CATEGORIES = [
+      "Training & Learning",
+      "Internal Meeting",
+      "Client / External Meeting",
+      "Deep Work / Execution",
+      "Admin / Paperwork",
+      "Planning & Strategy",
+      "Support & Maintenance",
+      "Code / Peer Review",
+      "Quality Assurance / Testing",
+      "Miscellaneous"
+    ];
+
+    const TASK_TYPES = [
+      "Email & Communication",
+      "Development / Coding",
+      "Testing & QA",
+      "Meetings / Calls",
+      "Documentation",
+      "Client Support",
+      "Research & Learning",
+      "Project Planning",
+      "Code Review",
+      "Other / Miscellaneous"
+    ];
+
+    // --- STATE ---
+    let user = null; 
+    let logs = [];
+    let shiftStartTime = null;
+
+    let activeTask = null;
+    let activeOther = null;
+    let breakTimeoutRef = null;
+
+    // --- DOM ELEMENTS ---
+    const loginView = document.getElementById('loginView');
+    const mainView = document.getElementById('mainView');
+    const loginForm = document.getElementById('loginForm');
+    
+    const btnPunchIn = document.getElementById('btnPunchIn');
+    const shiftProgressContainer = document.getElementById('shiftProgressContainer');
+    const shiftProgressBar = document.getElementById('shiftProgressBar');
+    const shiftTimeText = document.getElementById('shiftTimeText');
+    const shiftDateValue = document.getElementById('shiftDateValue');
+    const headerUserName = document.getElementById('headerUserName');
+    const headerDetails = document.getElementById('headerDetails');
+
+    const activeBanner = document.getElementById('activeBanner');
+    const activeBannerIconContainer = document.getElementById('activeBannerIconContainer');
+    const activeBannerText = document.getElementById('activeBannerText');
+    const activeBannerStartTime = document.getElementById('activeBannerStartTime');
+    const liveDurationEl = document.getElementById('liveDuration');
+
+    const categoryDropdown = document.getElementById('categoryDropdown');
+    const taskDropdown = document.getElementById('taskDropdown');
+    const btnStartTask = document.getElementById('btnStartTask');
+    const taskActiveControls = document.getElementById('taskActiveControls');
+    const btnPauseTask = document.getElementById('btnPauseTask');
+    const btnResumeTask = document.getElementById('btnResumeTask');
+    const btnStopTask = document.getElementById('btnStopTask');
+    
+    const btnStartBreak = document.getElementById('btnStartBreak');
+    const btnStopBreak = document.getElementById('btnStopBreak');
+    const btnStartEmergency = document.getElementById('btnStartEmergency');
+    const btnStopEmergency = document.getElementById('btnStopEmergency');
+    const btnEodMail = document.getElementById('btnEodMail');
+
+    const logTableBody = document.getElementById('logTableBody');
+    const emergencyModal = document.getElementById('emergencyModal');
+    const emergencyReasonInput = document.getElementById('emergencyReasonInput');
+    const btnSubmitEmergency = document.getElementById('btnSubmitEmergency');
+    
+    const clipboardHolder = document.getElementById('clipboardHolder');
+    const toastContainer = document.getElementById('toastContainer');
+
+    // --- INITIALIZATION ---
+    function init() {
+      populateSelect('empDept', DEPARTMENTS);
+      populateSelect('empRole', ROLES);
+      populateSelect('empProgram', PROGRAMS);
+      populateSelect('categoryDropdown', CATEGORIES);
+      populateSelect('taskDropdown', TASK_TYPES);
+
+      loginForm.addEventListener('submit', handleLogin);
+      document.getElementById('btnLogout').addEventListener('click', handleLogout);
+      
+      btnPunchIn.addEventListener('click', handlePunchIn);
+
+      btnStartTask.addEventListener('click', startTask);
+      btnPauseTask.addEventListener('click', pauseTask);
+      btnResumeTask.addEventListener('click', resumeTask);
+      btnStopTask.addEventListener('click', stopTask);
+      
+      btnStartBreak.addEventListener('click', () => startOther('break'));
+      btnStopBreak.addEventListener('click', stopOther);
+      btnStartEmergency.addEventListener('click', () => startOther('emergency'));
+      btnStopEmergency.addEventListener('click', stopOther);
+      
+      btnEodMail.addEventListener('click', () => sendEODMail(false));
+
+      emergencyReasonInput.addEventListener('input', () => {
+        btnSubmitEmergency.disabled = !emergencyReasonInput.value.trim();
+      });
+      btnSubmitEmergency.addEventListener('click', submitEmergencyReason);
+
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+      
+      setInterval(mainTick, 1000);
+    }
+
+    // --- UTILS & TOASTS ---
+    function showToast(message, type = 'info') {
+      const toast = document.createElement('div');
+      const bgColor = type === 'error' ? 'bg-red-600' : (type === 'success' ? 'bg-green-600' : 'bg-blue-600');
+      toast.className = `${bgColor} text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 toast-enter toast-enter-active font-semibold`;
+      
+      const icon = type === 'error' ? '<i class="fa-solid fa-triangle-exclamation"></i>' : 
+                   (type === 'success' ? '<i class="fa-solid fa-check-circle"></i>' : '<i class="fa-solid fa-circle-info"></i>');
+      
+      toast.innerHTML = `${icon} <span>${message}</span>`;
+      toastContainer.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.classList.remove('toast-enter-active');
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }
+
+    function populateSelect(id, optionsArray) {
+      const select = document.getElementById(id);
+      optionsArray.forEach(opt => {
+        const option = document.createElement('option');
+        option.value = opt;
+        option.textContent = opt;
+        select.appendChild(option);
+      });
+    }
+
+    // Geo Date & Time Formatting
+    function formatTime(dateMs) {
+      if (!dateMs) return 'N/A';
+      return new Date(dateMs).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+
+    function formatDate(dateMs) {
+      if (!dateMs) return 'N/A';
+      return new Date(dateMs).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+    }
+
+    function getUserTimeZone() {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone;
+    }
+
+    function formatDurationMs(ms) {
+      const diff = Math.max(0, ms);
+      const hours = Math.floor(diff / 3600000);
+      const minutes = Math.floor((diff % 3600000) / 60000);
+      const seconds = Math.floor((diff % 60000) / 1000);
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    // --- CORE TICK LOOP ---
+    function mainTick() {
+      if (!user) return;
+      const now = Date.now();
+
+      if (shiftStartTime) {
+        const elapsed = now - shiftStartTime;
+        const percentage = Math.min((elapsed / SHIFT_DURATION_MS) * 100, 100);
+        shiftProgressBar.style.width = `${percentage}%`;
+        
+        const h = Math.floor(elapsed / 3600000);
+        const m = Math.floor((elapsed % 3600000) / 60000);
+        const s = Math.floor((elapsed % 60000) / 1000);
+        shiftTimeText.innerHTML = `${h}h ${m.toString().padStart(2,'0')}m ${s.toString().padStart(2,'0')}s <span class="text-slate-400 font-normal">/ 9h 00m</span>`;
+      }
+
+      if (activeOther) {
+        liveDurationEl.textContent = formatDurationMs(now - activeOther.startTime);
+      } else if (activeTask && activeTask.isRunning) {
+        liveDurationEl.textContent = formatDurationMs(activeTask.accumulatedMs + (now - activeTask.lastStartTime));
+      }
+    }
+
+    // --- ACTIONS ---
+    function handleLogin(e) {
+      e.preventDefault();
+      user = { 
+        empId: document.getElementById('empId').value, 
+        name: document.getElementById('empName').value,
+        dept: document.getElementById('empDept').value,
+        role: document.getElementById('empRole').value,
+        program: document.getElementById('empProgram').value,
+        loginTime: Date.now() 
+      };
+      
+      loginView.classList.add('hidden');
+      mainView.classList.remove('hidden');
+      
+      headerUserName.textContent = `${user.name} (${user.empId})`;
+      headerDetails.textContent = `${user.dept} | ${user.role} | ${user.program}`;
+      
+      renderControls();
+      renderBanner();
+      renderLogs();
+      showToast(`Welcome back, ${user.name}!`, 'success');
+    }
+
+    function handlePunchIn() {
+      shiftStartTime = Date.now();
+      
+      // Update Date Display using local Geo time
+      shiftDateValue.textContent = `${formatDate(shiftStartTime)} (${getUserTimeZone()})`;
+      
+      btnPunchIn.classList.add('hidden');
+      shiftProgressContainer.classList.remove('hidden');
+      showToast("Shift Started successfully", "success");
+    }
+
+    function startTask() {
+      if (activeOther) return; 
+      
+      activeTask = {
+        name: taskDropdown.value,
+        category: categoryDropdown.value,
+        originalStartTime: Date.now(),
+        lastStartTime: Date.now(),
+        accumulatedMs: 0,
+        isRunning: true
+      };
+      renderControls();
+      renderBanner();
+    }
+
+    function pauseTask() {
+      if (activeTask && activeTask.isRunning) {
+        activeTask.accumulatedMs += Date.now() - activeTask.lastStartTime;
+        activeTask.isRunning = false;
+        renderControls();
+        renderBanner();
+      }
+    }
+
+    function resumeTask() {
+      if (activeOther) {
+        showToast("Please end your break or emergency before resuming the task.", "error");
+        return;
+      }
+      if (activeTask && !activeTask.isRunning) {
+        activeTask.lastStartTime = Date.now();
+        activeTask.isRunning = true;
+        renderControls();
+        renderBanner();
+      }
+    }
+
+    function stopTask() {
+      if (!activeTask) return;
+      
+      if (activeTask.isRunning) {
+        activeTask.accumulatedMs += Date.now() - activeTask.lastStartTime;
+      }
+      
+      logActivity(
+        'task', 
+        activeTask.name, 
+        activeTask.originalStartTime, 
+        Date.now(), 
+        "", 
+        activeTask.category, 
+        activeTask.accumulatedMs
+      );
+      
+      activeTask = null;
+      renderControls();
+      renderBanner();
+      showToast("Task logged successfully", "success");
+    }
+
+    function startOther(type) {
+      if (activeOther) return; 
+      
+      if (activeTask && activeTask.isRunning) {
+        pauseTask();
+      }
+
+      activeOther = { type, startTime: Date.now() };
+
+      if (type === 'break') {
+        breakTimeoutRef = setTimeout(() => {
+          handleAutoLogout(activeOther.startTime);
+        }, MAX_BREAK_MINUTES * 60 * 1000);
+      }
+      
+      renderControls();
+      renderBanner();
+    }
+
+    function stopOther() {
+      if (!activeOther) return;
+      
+      if (activeOther.type === 'break') {
+        clearTimeout(breakTimeoutRef);
+        logActivity('break', 'Break Time', activeOther.startTime, Date.now(), "", "Break");
+        activeOther = null;
+        renderControls();
+        renderBanner();
+        showToast("Break ended", "info");
+      } 
+      else if (activeOther.type === 'emergency') {
+        emergencyReasonInput.value = "";
+        btnSubmitEmergency.disabled = true;
+        emergencyModal.classList.remove('hidden');
+        emergencyModal.classList.add('flex');
+        emergencyReasonInput.focus();
+      }
+    }
+
+    function submitEmergencyReason() {
+      const reason = emergencyReasonInput.value;
+      logActivity('emergency', 'Emergency Leave', activeOther.startTime, Date.now(), reason, "Emergency");
+      
+      emergencyModal.classList.add('hidden');
+      emergencyModal.classList.remove('flex');
+      activeOther = null;
+      renderControls();
+      renderBanner();
+      showToast("Emergency recorded", "success");
+    }
+
+    function logActivity(type, name, startMs, endMs, details = "", category = "-", durationMs = null) {
+      const finalDurationMs = durationMs !== null ? durationMs : (endMs - startMs);
+      const newLog = {
+        id: Date.now(),
+        type,
+        category,
+        name,
+        startTime: startMs,
+        endTime: endMs,
+        duration: formatDurationMs(finalDurationMs),
+        details
+      };
+      logs.push(newLog);
+      renderLogs();
+    }
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === 'visible' && activeOther?.type === 'break') {
+        stopOther(); 
+      }
+    }
+
+    // --- RENDERERS ---
+    function renderControls() {
+      const isOtherActive = activeOther !== null;
+      const isTaskActive = activeTask !== null;
+
+      categoryDropdown.disabled = isTaskActive;
+      taskDropdown.disabled = isTaskActive;
+      
+      if (isTaskActive) {
+        btnStartTask.classList.add('hidden');
+        taskActiveControls.classList.remove('hidden');
+        taskActiveControls.classList.add('flex');
+
+        if (activeTask.isRunning) {
+          btnPauseTask.classList.remove('hidden');
+          btnResumeTask.classList.add('hidden');
+        } else {
+          btnPauseTask.classList.add('hidden');
+          btnResumeTask.classList.remove('hidden');
+        }
+        
+        btnStopTask.disabled = isOtherActive;
+        btnStopTask.classList.toggle('opacity-50', isOtherActive);
+      } else {
+        btnStartTask.classList.remove('hidden');
+        taskActiveControls.classList.add('hidden');
+        taskActiveControls.classList.remove('flex');
+        btnStartTask.disabled = isOtherActive; 
+      }
+
+      if (activeOther?.type === 'break') {
+        btnStartBreak.classList.add('hidden');
+        btnStopBreak.classList.remove('hidden');
+      } else {
+        btnStartBreak.classList.remove('hidden');
+        btnStopBreak.classList.add('hidden');
+        btnStartBreak.disabled = activeOther?.type === 'emergency';
+      }
+
+      if (activeOther?.type === 'emergency') {
+        btnStartEmergency.classList.add('hidden');
+        btnStopEmergency.classList.remove('hidden');
+      } else {
+        btnStartEmergency.classList.remove('hidden');
+        btnStopEmergency.classList.add('hidden');
+        btnStartEmergency.disabled = activeOther?.type === 'break';
+      }
+    }
+
+    function renderBanner() {
+      activeBanner.className = "rounded-xl p-4 shadow-sm border flex items-center justify-between transition-all";
+      
+      if (activeOther) {
+        activeBanner.classList.remove('hidden');
+        activeBanner.classList.add('animate-pulse');
+        activeBannerStartTime.textContent = `Started at ${formatTime(activeOther.startTime)}`;
+        
+        if (activeOther.type === 'break') {
+          activeBanner.classList.add('bg-amber-50', 'border-amber-200', 'text-amber-800');
+          activeBannerIconContainer.innerHTML = `<i class="fa-solid fa-mug-hot animate-spin-slow"></i>`;
+          activeBannerText.textContent = `Currently Active: On Break`;
+        } else {
+          activeBanner.classList.add('bg-red-50', 'border-red-200', 'text-red-800');
+          activeBannerIconContainer.innerHTML = `<i class="fa-solid fa-truck-medical animate-spin-slow"></i>`;
+          activeBannerText.textContent = `Currently Active: Emergency Time`;
+        }
+      } 
+      else if (activeTask) {
+        activeBanner.classList.remove('hidden');
+        activeBannerStartTime.textContent = `Original Start: ${formatTime(activeTask.originalStartTime)}`;
+        
+        if (activeTask.isRunning) {
+          activeBanner.classList.add('animate-pulse', 'bg-blue-50', 'border-blue-200', 'text-blue-800');
+          activeBannerIconContainer.innerHTML = `<i class="fa-solid fa-play animate-spin-slow"></i>`;
+          activeBannerText.textContent = `Currently Tracking: ${activeTask.name}`;
+          liveDurationEl.classList.remove('text-slate-500');
+        } else {
+          activeBanner.classList.add('bg-slate-100', 'border-slate-300', 'text-slate-600');
+          activeBannerIconContainer.innerHTML = `<i class="fa-solid fa-pause"></i>`;
+          activeBannerText.textContent = `Task Paused: ${activeTask.name}`;
+          liveDurationEl.textContent = formatDurationMs(activeTask.accumulatedMs); 
+          liveDurationEl.classList.add('text-slate-500');
+        }
+      } 
+      else {
+        activeBanner.classList.add('hidden');
+      }
+    }
+
+    function renderLogs() {
+      document.getElementById('logCount').textContent = `${logs.length} Entries`;
+
+      if (logs.length === 0) {
+        document.getElementById('emptyLogState').classList.remove('hidden');
+        document.getElementById('logTable').classList.add('hidden');
+        logTableBody.innerHTML = '';
+        return;
+      }
+
+      document.getElementById('emptyLogState').classList.add('hidden');
+      document.getElementById('logTable').classList.remove('hidden');
+
+      logTableBody.innerHTML = [...logs].reverse().map(log => {
+        let badgeClass = '';
+        if (log.type === 'task') badgeClass = 'bg-blue-100 text-blue-700';
+        if (log.type === 'break') badgeClass = 'bg-amber-100 text-amber-700';
+        if (log.type === 'emergency') badgeClass = 'bg-red-100 text-red-700';
+
+        let detailsHtml = log.details ? `<p class="text-xs text-slate-500 font-normal mt-1 italic">"${log.details}"</p>` : '';
+
+        return `
+          <tr class="bg-white border-b border-slate-50 hover:bg-slate-50 transition-colors">
+            <td class="px-6 py-4">
+              <span class="px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${badgeClass}">
+                ${log.type}
+              </span>
+            </td>
+            <td class="px-6 py-4 text-xs font-semibold text-slate-600">${log.category}</td>
+            <td class="px-6 py-4 font-medium text-slate-900">
+              ${log.name}
+              ${detailsHtml}
+            </td>
+            <td class="px-6 py-4 text-slate-600">${formatTime(log.startTime)}</td>
+            <td class="px-6 py-4 text-slate-600">${formatTime(log.endTime)}</td>
+            <td class="px-6 py-4 font-mono font-medium text-slate-800">${log.duration}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // --- HTML MAIL GENERATION & CLIPBOARD LOGIC ---
+    function copyHtmlToClipboard(htmlContent) {
+      clipboardHolder.innerHTML = htmlContent;
+      
+      const range = document.createRange();
+      range.selectNodeContents(clipboardHolder);
+      
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+      
+      let success = false;
+      try {
+        success = document.execCommand('copy');
+      } catch (err) {
+        console.error('Failed to copy html table:', err);
+      }
+      
+      selection.removeAllRanges();
+      clipboardHolder.innerHTML = '';
+      return success;
+    }
+
+    function sendEODMail(isAutoLogout = false, breakStartMs = null) {
+      if (!user) return;
+      
+      const logoutTime = Date.now();
+      const totalLoggedMs = logoutTime - user.loginTime;
+      const totalLoggedHours = formatDurationMs(totalLoggedMs);
+      
+      // Build Rich HTML Table Document
+      let html = `<div style="font-family: Arial, sans-serif; color: #333; max-width: 800px;">`;
+      
+      if (isAutoLogout) {
+        html += `<div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 12px; margin-bottom: 20px;">
+          <strong style="color: #b91c1c;">⚠️ SYSTEM ALERT:</strong> Auto-logged out due to break exceeding ${MAX_BREAK_MINUTES} minutes.<br>
+          Break Started at: ${formatTime(breakStartMs)}
+        </div>`;
+      }
+
+      html += `<h2 style="color: #2563eb; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">Employee EOD Report</h2>`;
+      
+      // First Table - Including Date and Timezone
+      html += `
+        <table border="1" cellpadding="10" cellspacing="0" style="border-collapse: collapse; width: 100%; margin-bottom: 30px; border-color: #cbd5e1;">
+          <tr><th style="background-color: #f8fafc; text-align: left; width: 30%;">Date</th><td>${formatDate(user.loginTime)}</td></tr>
+          <tr><th style="background-color: #f8fafc; text-align: left;">Timezone</th><td>${getUserTimeZone()}</td></tr>
+          <tr><th style="background-color: #f8fafc; text-align: left;">Emp ID</th><td>${user.empId}</td></tr>
+          <tr><th style="background-color: #f8fafc; text-align: left;">Emp Name</th><td>${user.name}</td></tr>
+          <tr><th style="background-color: #f8fafc; text-align: left;">Program</th><td>${user.program}</td></tr>
+          <tr><th style="background-color: #f8fafc; text-align: left;">Department</th><td>${user.dept}</td></tr>
+          <tr><th style="background-color: #f8fafc; text-align: left;">Role</th><td>${user.role}</td></tr>
+          <tr><th style="background-color: #f8fafc; text-align: left;">Login Time</th><td>${formatTime(user.loginTime)}</td></tr>
+          <tr><th style="background-color: #f8fafc; text-align: left;">Logout Time</th><td>${formatTime(logoutTime)}</td></tr>
+          <tr><th style="background-color: #f8fafc; text-align: left;">Total Logged Hours</th><td><strong>${totalLoggedHours}</strong></td></tr>
+        </table>
+      `;
+
+      html += `<h2 style="color: #2563eb; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">Activity Logs</h2>`;
+      
+      // Second Table
+      html += `
+        <table border="1" cellpadding="10" cellspacing="0" style="border-collapse: collapse; width: 100%; border-color: #cbd5e1;">
+          <thead>
+            <tr style="background-color: #f8fafc;">
+              <th style="text-align: left;">Category</th>
+              <th style="text-align: left;">Task / Activity</th>
+              <th style="text-align: center;">Start Time</th>
+              <th style="text-align: center;">End Time</th>
+              <th style="text-align: center;">Total Duration</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      if(logs.length === 0) {
+        html += `<tr><td colspan="5" style="text-align: center; color: #64748b;">No activities logged today</td></tr>`;
+      } else {
+        logs.forEach(log => {
+          let taskNameDisplay = log.name;
+          if (log.details) {
+            taskNameDisplay += `<br><span style="color: #64748b; font-size: 0.9em; font-style: italic;">└─ ${log.details}</span>`;
+          }
+          
+          html += `
+            <tr>
+              <td>${log.category || "-"}</td>
+              <td>${taskNameDisplay}</td>
+              <td style="text-align: center; white-space: nowrap;">${formatTime(log.startTime)}</td>
+              <td style="text-align: center; white-space: nowrap;">${formatTime(log.endTime)}</td>
+              <td style="text-align: center; font-weight: bold;">${log.duration}</td>
+            </tr>
+          `;
+        });
+      }
+
+      html += `</tbody></table></div>`;
+
+      // Copy to clipboard
+      const copied = copyHtmlToClipboard(html);
+      
+      if (copied) {
+        showToast("HTML Report Copied! Please Paste (Ctrl+V) into your email body.", "success");
+      } else {
+        showToast("Failed to copy report to clipboard automatically.", "error");
+      }
+
+      // Open email client with instruction in body
+      const subject = encodeURIComponent(`EOD Report: ${user.name} (${user.empId})${isAutoLogout ? ' - AUTO LOGOUT ALERT' : ''}`);
+      const fallbackBody = encodeURIComponent(`Please Paste (Ctrl+V or Cmd+V) the copied EOD Report Table right here.`);
+      
+      setTimeout(() => {
+        window.location.href = `mailto:${EMAILS}?subject=${subject}&body=${fallbackBody}`;
+      }, 500); // Give user a moment to read the toast
+    }
+
+    function handleAutoLogout(breakStartMs) {
+      logActivity('break', 'Break Exceeded limit', breakStartMs, Date.now(), "Auto-logout triggered", "Break");
+      sendEODMail(true, breakStartMs);
+      
+      activeTask = null;
+      activeOther = null;
+      user = null;
+      logs = [];
+      shiftStartTime = null;
+      
+      loginView.classList.remove('hidden');
+      mainView.classList.add('hidden');
+      btnPunchIn.classList.remove('hidden');
+      shiftProgressContainer.classList.add('hidden');
+    }
+
+    function handleLogout() {
+      if (activeTask || activeOther) {
+        showToast("Please finish or end your current active activities before logging out.", "error");
+        return;
+      }
+      sendEODMail(false);
+      
+      user = null;
+      logs = [];
+      shiftStartTime = null;
+      
+      loginView.classList.remove('hidden');
+      mainView.classList.add('hidden');
+      btnPunchIn.classList.remove('hidden');
+      shiftProgressContainer.classList.add('hidden');
+    }
+
+    // Run Initialization
+    init();
+
+  </script>
+</body>
+</html>
+
