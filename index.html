@@ -1,950 +1,1093 @@
 <!DOCTYPE html>
+
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TaskFlow Pro</title>
-  
-  <!-- Tailwind CSS via CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- FontAwesome for Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
-  <style>
-    .animate-spin-slow {
-      animation: spin 3s linear infinite;
-    }
-    .toast-enter {
-      transform: translateY(100%);
-      opacity: 0;
-    }
-    .toast-enter-active {
-      transform: translateY(0);
-      opacity: 1;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-  </style>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Smart Code & Content Comparator</title>
+
+    <script src=https://cdn.tailwindcss.com></script>
+
+    <script src=https://unpkg.com/lucide@latest></script>
+
+    <style>
+
+        /* Custom styles for VS Code like text areas */
+
+        .editor-container {
+
+            position: relative;
+
+            display: flex;
+
+            background-color: #1e1e1e;
+
+            color: #d4d4d4;
+
+            border-radius: 0.5rem;
+
+            overflow: hidden;
+
+            border: 1px solid #3f3f46;
+
+            height: 400px;
+
+        }
+
+       
+
+        .line-numbers {
+
+            padding: 1rem 0.5rem;
+
+            background-color: #1e1e1e;
+
+            color: #858585;
+
+            text-align: right;
+
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+            font-size: 0.875rem;
+
+            line-height: 1.5rem;
+
+            user-select: none;
+
+            overflow-y: hidden;
+
+            border-right: 1px solid #3f3f46;
+
+            min-width: 3rem;
+
+        }
+
+ 
+
+        .code-textarea {
+
+            flex: 1;
+
+            padding: 1rem;
+
+            background-color: transparent;
+
+            color: inherit;
+
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+            font-size: 0.875rem;
+
+            line-height: 1.5rem;
+
+            border: none;
+
+            resize: none;
+
+            outline: none;
+
+            white-space: pre;
+
+            overflow: auto;
+
+        }
+
+ 
+
+        /* Custom Scrollbar */
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+
+        ::-webkit-scrollbar-track { background: #1e1e1e; }
+
+        ::-webkit-scrollbar-thumb { background: #424242; border-radius: 4px; }
+
+        ::-webkit-scrollbar-thumb:hover { background: #4f4f4f; }
+
+    </style>
+
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
 
-  <!-- Toast Notification Container -->
-  <div id="toastContainer" class="fixed bottom-4 right-4 z-[100] flex flex-col gap-2"></div>
+<body class="bg-gray-50 text-gray-900 font-sans min-h-screen">
 
-  <!-- ==================== LOGIN VIEW ==================== -->
-  <div id="loginView" class="min-h-screen flex items-center justify-center p-4 py-10">
-    <div class="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden border border-blue-100">
-      <div class="bg-blue-600 p-8 text-center text-white">
-        <i class="fa-solid fa-clock text-5xl text-blue-100 mb-4"></i>
-        <h1 class="text-3xl font-bold">TaskFlow Pro</h1>
-        <p class="text-blue-200 mt-2">Employee Time & Task Tracking</p>
-      </div>
-      <form id="loginForm" class="p-8 space-y-4">
-        <div>
-          <label class="block text-sm font-semibold text-slate-700 mb-1">Employee ID</label>
-          <div class="relative">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <i class="fa-solid fa-id-badge text-slate-400"></i>
+ 
+
+    <!-- Navigation Bar -->
+
+    <nav class="bg-blue-600 text-white shadow-md mb-8">
+
+        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+
+            <div class="flex items-center gap-3">
+
+                <i data-lucide="file-diff" class="w-8 h-8 text-white"></i>
+
+                <div>
+
+                    <h1 class="text-2xl font-bold tracking-tight">Smart Version Analyzer</h1>
+
+                    <p class="text-blue-100 text-sm mt-0.5">Compare HTML, Rich Text, or Code with intelligent insights.</p>
+
+                </div>
+
             </div>
-            <input type="text" id="empId" required class="pl-10 w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none" placeholder="e.g. EMP-1042" />
-          </div>
+
         </div>
-        <div>
-          <label class="block text-sm font-semibold text-slate-700 mb-1">Full Name</label>
-          <div class="relative">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <i class="fa-solid fa-user text-slate-400"></i>
+
+    </nav>
+
+ 
+
+    <div class="max-w-7xl mx-auto px-4 pb-8">
+
+        <!-- Input Section -->
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+
+            <!-- Previous Version -->
+
+            <div class="flex flex-col gap-2">
+
+                <label class="font-semibold text-gray-700 flex items-center gap-2">
+
+                    <i data-lucide="history" class="w-4 h-4 text-gray-500"></i> Previous Version
+
+                </label>
+
+                <div class="editor-container shadow-sm">
+
+                    <div class="line-numbers" id="prev-lines">1</div>
+
+                    <textarea id="prev-code" class="code-textarea" spellcheck="false" onscroll="syncScroll('prev')" oninput="updateLines('prev')"></textarea>
+
+                </div>
+
             </div>
-            <input type="text" id="empName" required class="pl-10 w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none" placeholder="John Doe" />
-          </div>
-        </div>
-        
-        <div>
-          <label class="block text-sm font-semibold text-slate-700 mb-1">Department</label>
-          <select id="empDept" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-            <!-- Injected via JS -->
-          </select>
-        </div>
-        
-        <div>
-          <label class="block text-sm font-semibold text-slate-700 mb-1">Role</label>
-          <select id="empRole" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-            <!-- Injected via JS -->
-          </select>
+
+ 
+
+            <!-- Current Version -->
+
+            <div class="flex flex-col gap-2">
+
+                <label class="font-semibold text-gray-700 flex items-center gap-2">
+
+                    <i data-lucide="file-code-2" class="w-4 h-4 text-blue-500"></i> Current Version
+
+                </label>
+
+                <div class="editor-container shadow-sm">
+
+                    <div class="line-numbers" id="curr-lines">1</div>
+
+                    <textarea id="curr-code" class="code-textarea" spellcheck="false" onscroll="syncScroll('curr')" oninput="updateLines('curr')"></textarea>
+
+                </div>
+
+            </div>
+
         </div>
 
-        <div>
-          <label class="block text-sm font-semibold text-slate-700 mb-1">Program</label>
-          <select id="empProgram" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-            <!-- Injected via JS -->
-          </select>
+ 
+
+        <!-- Action Button -->
+
+        <div class="flex justify-center mb-10">
+
+            <button onclick="analyzeChanges()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg flex items-center gap-2 transition-all transform hover:scale-105">
+
+                <i data-lucide="sparkles" class="w-5 h-5"></i> Analyze Changes
+
+            </button>
+
         </div>
 
-        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors shadow-md hover:shadow-lg flex items-center justify-center gap-2 mt-4">
-          Secure Login <i class="fa-solid fa-chevron-right text-sm"></i>
-        </button>
-      </form>
+ 
+
+        <!-- Loading State -->
+
+        <div id="loading" class="hidden text-center py-12">
+
+            <i data-lucide="loader-2" class="w-10 h-10 text-blue-600 animate-spin mx-auto mb-4"></i>
+
+            <p class="text-gray-600 font-medium">Analyzing differences and extracting insights...</p>
+
+        </div>
+
+ 
+
+        <!-- Results Section (Hidden by default) -->
+
+        <div id="results" class="hidden space-y-8 animate-fade-in">
+
+           
+
+            <!-- Top Stats & Summary Grid -->
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+                <!-- Word Stats -->
+
+                <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm col-span-1">
+
+                    <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Content Stats (Text Only)</h3>
+
+                    <div class="grid grid-cols-2 gap-4">
+
+                        <div class="bg-gray-50 p-3 rounded-lg border border-gray-100">
+
+                            <p class="text-xs text-gray-500">Previous Words</p>
+
+                            <p class="text-2xl font-bold text-gray-800" id="stat-prev-words">0</p>
+
+                        </div>
+
+                        <div class="bg-gray-50 p-3 rounded-lg border border-gray-100">
+
+                            <p class="text-xs text-gray-500">Current Words</p>
+
+                            <p class="text-2xl font-bold text-blue-600" id="stat-curr-words">0</p>
+
+                        </div>
+
+                        <div class="bg-green-50 p-3 rounded-lg border border-green-100">
+
+                            <p class="text-xs text-green-600">Words Added</p>
+
+                            <p class="text-xl font-bold text-green-700" id="stat-added">+0</p>
+
+                        </div>
+
+                        <div class="bg-red-50 p-3 rounded-lg border border-red-100">
+
+                            <p class="text-xs text-red-600">Words Removed</p>
+
+                            <p class="text-xl font-bold text-red-700" id="stat-removed">-0</p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+ 
+
+                <!-- Smart Summary -->
+
+                <div class="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-100 shadow-sm col-span-1 md:col-span-2">
+
+                    <h3 class="text-sm font-bold text-blue-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+
+                        <i data-lucide="brain-circuit" class="w-4 h-4"></i> Smart Summary
+
+                    </h3>
+
+                    <ul id="smart-summary-list" class="list-disc list-inside text-gray-800 font-medium text-md leading-relaxed space-y-2">
+
+                        <!-- Populated by JS -->
+
+                    </ul>
+
+                </div>
+
+            </div>
+
+ 
+
+            <!-- Observations & Metadata Grid -->
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                <!-- Key Observations -->
+
+                <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm lg:col-span-2">
+
+                    <h3 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Key Observations</h3>
+
+                    <ul id="observations-list" class="space-y-3">
+
+                        <!-- Populated by JS -->
+
+                    </ul>
+
+                </div>
+
+ 
+
+                <!-- Metadata & Scoring -->
+
+                <div class="space-y-6 lg:col-span-1">
+
+                    <!-- Scoring -->
+
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+
+                        <h3 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Quality Score</h3>
+
+                       
+
+                        <div class="mb-4">
+
+                            <div class="flex items-center justify-between mb-1">
+
+                                <span class="text-gray-600 text-sm">Previous Version: <span class="font-bold text-gray-500" id="score-prev">0/10</span></span>
+
+                            </div>
+
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+
+                                <div id="score-bar-prev" class="bg-gray-400 h-2 rounded-full transition-all duration-1000" style="width: 0%"></div>
+
+                            </div>
+
+                        </div>
+
+                       
+
+                        <div class="mb-5">
+
+                            <div class="flex items-center justify-between mb-1">
+
+                                <span class="text-gray-600 text-sm font-medium">Current Version: <span class="font-bold text-blue-600 text-lg" id="score-curr">0/10</span></span>
+
+                            </div>
+
+                            <div class="w-full bg-blue-100 rounded-full h-2.5">
+
+                                <div id="score-bar-curr" class="bg-blue-600 h-2.5 rounded-full transition-all duration-1000" style="width: 0%"></div>
+
+                            </div>
+
+                        </div>
+
+ 
+
+                        <div class="bg-yellow-50 p-3 rounded-lg border border-yellow-100">
+
+                            <h4 class="text-xs font-bold text-yellow-700 uppercase mb-1">Recommendation</h4>
+
+                            <p class="text-sm text-yellow-800" id="score-recommendation"></p>
+
+                        </div>
+
+                    </div>
+
+ 
+
+                    <!-- Metadata -->
+
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+
+                        <h3 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Extracted Metadata</h3>
+
+                        <div class="space-y-3 text-sm">
+
+                            <div class="flex justify-between">
+
+                                <span class="text-gray-500">Author:</span>
+
+                                <span class="font-medium text-gray-800" id="meta-author">Not available</span>
+
+                            </div>
+
+                            <div class="flex justify-between">
+
+                                <span class="text-gray-500">Last Modified By:</span>
+
+                                <span class="font-medium text-gray-800" id="meta-modified">Not available</span>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+ 
+
+            <!-- Detailed Difference View (Completely Redesigned for Perfect Sync) -->
+
+            <div class="bg-[#1e1e1e] rounded-xl border border-gray-700 shadow-xl overflow-hidden flex flex-col">
+
+                <!-- Header -->
+
+                <div class="bg-[#2d2d2d] px-4 py-3 border-b border-gray-600 flex justify-between items-center z-10">
+
+                    <h3 class="text-white font-semibold flex items-center gap-2">
+
+                        <i data-lucide="split-square-horizontal" class="w-4 h-4 text-gray-400"></i> Detailed Difference View
+
+                    </h3>
+
+                    <div class="flex gap-4 text-xs font-medium">
+
+                        <span class="flex items-center gap-1 text-green-300"><span class="w-3 h-3 bg-[#2ea043] rounded-sm inline-block"></span> Additions</span>
+
+                        <span class="flex items-center gap-1 text-red-300"><span class="w-3 h-3 bg-[#f85149] rounded-sm inline-block"></span> Deletions</span>
+
+                    </div>
+
+                </div>
+
+               
+
+                <!-- Column Labels -->
+
+                <div class="flex w-full bg-[#2d2d2d] border-b border-gray-600 text-xs font-semibold uppercase tracking-wider z-10">
+
+                    <div class="w-1/2 text-center text-gray-400 py-2 border-r border-gray-600">Previous Version</div>
+
+                    <div class="w-1/2 text-center text-blue-400 py-2">Current Version</div>
+
+                </div>
+
+               
+
+                <!-- Scrollable Unified Diff Content -->
+
+                <div class="overflow-y-auto max-h-[600px] font-mono text-sm text-gray-300 relative" id="diff-unified-container">
+
+                    <!-- Rows injected here by JavaScript -->
+
+                </div>
+
+            </div>
+
+ 
+
+        </div>
+
     </div>
-  </div>
 
-  <!-- ==================== MAIN APP VIEW ==================== -->
-  <div id="mainView" class="hidden min-h-screen bg-slate-50 text-slate-800 font-sans flex flex-col">
-    <!-- Header -->
-    <header class="bg-white border-b border-blue-100 shadow-sm sticky top-0 z-20">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="bg-blue-600 p-2 rounded-lg">
-            <i class="fa-solid fa-clock text-white"></i>
-          </div>
-          <h1 class="text-xl font-bold text-slate-900 hidden sm:block">TaskFlow</h1>
-        </div>
-        <div class="flex items-center gap-6">
-          <div class="text-right">
-            <p id="headerUserName" class="text-sm font-semibold text-slate-900">Name (ID)</p>
-            <p id="headerDetails" class="text-xs text-slate-500">Dept | Role | Program</p>
-          </div>
-          <button id="btnLogout" class="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-red-600 transition-colors bg-slate-100 hover:bg-red-50 px-3 py-2 rounded-md">
-            <i class="fa-solid fa-right-from-bracket"></i> End Shift
-          </button>
-        </div>
-      </div>
-    </header>
+ 
 
-    <!-- Shift Punch In Bar -->
-    <div class="bg-white border-b border-blue-100 shadow-sm relative z-10">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
-        <div class="flex items-center gap-4 w-full">
-          <button id="btnPunchIn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg shadow-sm transition-colors text-sm flex items-center gap-2">
-            <i class="fa-solid fa-fingerprint"></i> Punch In
-          </button>
-          
-          <div id="shiftProgressContainer" class="hidden flex-1 flex items-center gap-4">
-            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap hidden md:block">Shift Progress</span>
-            
-            <!-- Geo Date Display -->
-            <span id="shiftDateText" class="text-xs font-bold text-blue-700 bg-blue-100 px-3 py-1.5 rounded-md hidden sm:block whitespace-nowrap">
-              <i class="fa-regular fa-calendar mr-1"></i> <span id="shiftDateValue">Date</span>
-            </span>
+    <script>
 
-            <div class="w-full bg-slate-200 rounded-full h-3">
-              <div id="shiftProgressBar" class="bg-green-500 h-3 rounded-full transition-all duration-1000 ease-linear" style="width: 0%"></div>
-            </div>
-            <span id="shiftTimeText" class="text-sm font-mono font-bold text-slate-700 whitespace-nowrap">00:00:00 <span class="text-slate-400 font-normal">/ 9h 00m</span></span>
-          </div>
-        </div>
-      </div>
-    </div>
+        // Initialize Icons
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 flex-1 w-full">
-      
-      <!-- Active Status Banner -->
-      <div id="activeBanner" class="hidden rounded-xl p-4 shadow-sm border items-center justify-between transition-all">
-        <div class="flex items-center gap-3">
-          <div id="activeBannerIconContainer" class="text-xl">
-            <!-- Icon injected here -->
-          </div>
-          <div>
-            <p id="activeBannerText" class="font-semibold">Currently Active: ...</p>
-            <p id="activeBannerStartTime" class="text-sm opacity-80">Started at ...</p>
-          </div>
-        </div>
-        <div id="liveDuration" class="text-2xl font-mono font-bold">
-          00:00:00
-        </div>
-      </div>
+        lucide.createIcons();
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        <!-- Controls Panel -->
-        <div class="lg:col-span-1 space-y-6">
-          
-          <!-- Task Controller -->
-          <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-            <h2 class="text-lg font-bold mb-4 flex items-center gap-2">
-              <i class="fa-solid fa-list-check text-blue-600"></i> Task Management
-            </h2>
-            <div class="space-y-4">
-              <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">Category</label>
-                <select id="categoryDropdown" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50">
-                  <!-- Options injected via JS -->
-                </select>
-              </div>
+ 
 
-              <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">Specific Task</label>
-                <select id="taskDropdown" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50">
-                  <!-- Options injected via JS -->
-                </select>
-              </div>
+        // --- Editor Line Number Logic ---
 
-              <button id="btnStartTask" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg flex justify-center items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                <i class="fa-solid fa-play"></i> Start Task Timing
-              </button>
-              
-              <div id="taskActiveControls" class="hidden flex-wrap gap-2">
-                <button id="btnPauseTask" class="flex-1 min-w-[120px] bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3 px-4 rounded-lg flex justify-center items-center gap-2 transition-colors">
-                  <i class="fa-solid fa-pause"></i> Pause
-                </button>
-                <button id="btnResumeTask" class="hidden flex-1 min-w-[120px] bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg flex justify-center items-center gap-2 transition-colors">
-                  <i class="fa-solid fa-play"></i> Resume
-                </button>
-                <button id="btnStopTask" class="flex-1 min-w-[120px] bg-slate-800 hover:bg-slate-900 text-white font-semibold py-3 px-4 rounded-lg flex justify-center items-center gap-2 transition-colors">
-                  <i class="fa-solid fa-check"></i> Finish Task
-                </button>
-              </div>
-            </div>
-          </div>
+        function updateLines(editorId) {
 
-          <!-- Break & Emergency Controllers -->
-          <div class="grid grid-cols-2 gap-4">
-            <!-- Break -->
-            <button id="btnStartBreak" class="bg-white border border-slate-200 hover:border-amber-400 hover:bg-amber-50 text-slate-700 font-semibold py-4 px-4 rounded-xl flex flex-col justify-center items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-              <i class="fa-solid fa-mug-hot text-amber-500 text-2xl"></i>
-              <span>Take Break</span>
-            </button>
-            <button id="btnStopBreak" class="hidden bg-amber-500 hover:bg-amber-600 text-white font-semibold py-4 px-4 rounded-xl flex flex-col justify-center items-center gap-2 transition-colors shadow-sm">
-              <i class="fa-solid fa-stop text-xl"></i>
-              <span>End Break</span>
-            </button>
+            const textarea = document.getElementById(`${editorId}-code`);
 
-            <!-- Emergency -->
-            <button id="btnStartEmergency" class="bg-white border border-slate-200 hover:border-red-400 hover:bg-red-50 text-slate-700 font-semibold py-4 px-4 rounded-xl flex flex-col justify-center items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-              <i class="fa-solid fa-truck-medical text-red-500 text-2xl"></i>
-              <span>Emergency</span>
-            </button>
-            <button id="btnStopEmergency" class="hidden bg-red-600 hover:bg-red-700 text-white font-semibold py-4 px-4 rounded-xl flex flex-col justify-center items-center gap-2 transition-colors shadow-sm">
-              <i class="fa-solid fa-stop text-xl"></i>
-              <span>End Emergency</span>
-            </button>
-          </div>
+            const linesContainer = document.getElementById(`${editorId}-lines`);
 
-           <!-- EOD Mail Button -->
-           <div class="pt-2">
-            <button id="btnEodMail" class="w-full bg-white border-2 border-blue-600 text-blue-700 hover:bg-blue-50 font-bold py-3 px-4 rounded-lg flex justify-center items-center gap-2 transition-colors">
-              <i class="fa-solid fa-envelope"></i> Copy Report & Open Mail
-            </button>
-            <p class="text-xs text-center text-slate-500 mt-2">
-              Auto-copies the HTML table. Just hit Paste (Ctrl+V) in your email body!
-            </p>
-          </div>
+            const lineCount = textarea.value.split('\n').length || 1;
 
-        </div>
+           
 
-        <!-- Activity Log Panel -->
-        <div class="lg:col-span-2">
-          <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden h-full flex flex-col">
-            <div class="p-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-              <h2 class="text-lg font-bold flex items-center gap-2">
-                <i class="fa-solid fa-clock-rotate-left text-blue-600"></i> Today's Log
-              </h2>
-              <span id="logCount" class="bg-blue-100 text-blue-800 text-xs font-bold px-2.5 py-1 rounded-full">
-                0 Entries
-              </span>
-            </div>
-            
-            <div class="p-0 overflow-x-auto overflow-y-auto max-h-[600px] flex-1 relative">
-              
-              <!-- Empty State -->
-              <div id="emptyLogState" class="h-full flex flex-col items-center justify-center text-slate-400 p-12 min-h-[300px]">
-                <i class="fa-solid fa-clipboard-list text-5xl mb-3 opacity-20"></i>
-                <p>No activities logged yet today.</p>
-              </div>
+            let linesHtml = '';
 
-              <!-- Log Table -->
-              <table id="logTable" class="hidden w-full text-sm text-left">
-                <thead class="text-xs text-slate-500 uppercase bg-slate-50 sticky top-0">
-                  <tr>
-                    <th class="px-6 py-3 whitespace-nowrap">Type</th>
-                    <th class="px-6 py-3 whitespace-nowrap">Category</th>
-                    <th class="px-6 py-3 min-w-[200px]">Task / Activity</th>
-                    <th class="px-6 py-3 whitespace-nowrap">Start</th>
-                    <th class="px-6 py-3 whitespace-nowrap">End</th>
-                    <th class="px-6 py-3 whitespace-nowrap">Duration</th>
-                  </tr>
-                </thead>
-                <tbody id="logTableBody">
-                  <!-- Rows injected here -->
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+            for (let i = 1; i <= lineCount; i++) {
 
-      </div>
-    </main>
-  </div>
+                linesHtml += i + '<br>';
 
-  <!-- ==================== EMERGENCY REASON MODAL ==================== -->
-  <div id="emergencyModal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
-      <div class="bg-red-600 p-4 flex items-center gap-3">
-        <i class="fa-solid fa-triangle-exclamation text-white text-xl"></i>
-        <h3 class="text-lg font-bold text-white">Emergency Log Complete</h3>
-      </div>
-      <div class="p-6 space-y-4">
-        <p class="text-sm text-slate-600">
-          Please provide a brief reason for your emergency time away from the keyboard. This will be included in your EOD report.
-        </p>
-        <textarea id="emergencyReasonInput" placeholder="Reason for emergency..." class="w-full p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none resize-none h-24"></textarea>
-        <button id="btnSubmitEmergency" class="w-full bg-slate-800 hover:bg-slate-900 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg transition-colors">
-          Save & Resume Work
-        </button>
-      </div>
-    </div>
-  </div>
+            }
 
-  <!-- Hidden div to hold HTML for clipboard copying -->
-  <div id="clipboardHolder" class="absolute left-[-9999px] top-[-9999px]" aria-hidden="true"></div>
+            linesContainer.innerHTML = linesHtml;
 
-  <!-- ==================== JAVASCRIPT ==================== -->
-  <script>
-    // --- CONFIGURATION ---
-    const EMAILS = "manager1@company.com,manager2@company.com,manager3@company.com";
-    const MAX_BREAK_MINUTES = 60;
-    const SHIFT_DURATION_MS = 9 * 60 * 60 * 1000; // 9 hours
-    
-    // Dropdown Data
-    const DEPARTMENTS = ["IT / Technology", "Human Resources", "Finance & Accounts", "Operations", "Sales & Marketing"];
-    const ROLES = ["Analyst", "Developer / Engineer", "Manager / Lead", "Support Specialist", "Administrator"];
-    const PROGRAMS = ["Alpha Initiative", "Beta Program", "Gamma Project", "Delta Deployment", "Epsilon Operations"];
-    
-    const CATEGORIES = [
-      "Training & Learning",
-      "Internal Meeting",
-      "Client / External Meeting",
-      "Deep Work / Execution",
-      "Admin / Paperwork",
-      "Planning & Strategy",
-      "Support & Maintenance",
-      "Code / Peer Review",
-      "Quality Assurance / Testing",
-      "Miscellaneous"
-    ];
-
-    const TASK_TYPES = [
-      "Email & Communication",
-      "Development / Coding",
-      "Testing & QA",
-      "Meetings / Calls",
-      "Documentation",
-      "Client Support",
-      "Research & Learning",
-      "Project Planning",
-      "Code Review",
-      "Other / Miscellaneous"
-    ];
-
-    // --- STATE ---
-    let user = null; 
-    let logs = [];
-    let shiftStartTime = null;
-
-    let activeTask = null;
-    let activeOther = null;
-    let breakTimeoutRef = null;
-
-    // --- DOM ELEMENTS ---
-    const loginView = document.getElementById('loginView');
-    const mainView = document.getElementById('mainView');
-    const loginForm = document.getElementById('loginForm');
-    
-    const btnPunchIn = document.getElementById('btnPunchIn');
-    const shiftProgressContainer = document.getElementById('shiftProgressContainer');
-    const shiftProgressBar = document.getElementById('shiftProgressBar');
-    const shiftTimeText = document.getElementById('shiftTimeText');
-    const shiftDateValue = document.getElementById('shiftDateValue');
-    const headerUserName = document.getElementById('headerUserName');
-    const headerDetails = document.getElementById('headerDetails');
-
-    const activeBanner = document.getElementById('activeBanner');
-    const activeBannerIconContainer = document.getElementById('activeBannerIconContainer');
-    const activeBannerText = document.getElementById('activeBannerText');
-    const activeBannerStartTime = document.getElementById('activeBannerStartTime');
-    const liveDurationEl = document.getElementById('liveDuration');
-
-    const categoryDropdown = document.getElementById('categoryDropdown');
-    const taskDropdown = document.getElementById('taskDropdown');
-    const btnStartTask = document.getElementById('btnStartTask');
-    const taskActiveControls = document.getElementById('taskActiveControls');
-    const btnPauseTask = document.getElementById('btnPauseTask');
-    const btnResumeTask = document.getElementById('btnResumeTask');
-    const btnStopTask = document.getElementById('btnStopTask');
-    
-    const btnStartBreak = document.getElementById('btnStartBreak');
-    const btnStopBreak = document.getElementById('btnStopBreak');
-    const btnStartEmergency = document.getElementById('btnStartEmergency');
-    const btnStopEmergency = document.getElementById('btnStopEmergency');
-    const btnEodMail = document.getElementById('btnEodMail');
-
-    const logTableBody = document.getElementById('logTableBody');
-    const emergencyModal = document.getElementById('emergencyModal');
-    const emergencyReasonInput = document.getElementById('emergencyReasonInput');
-    const btnSubmitEmergency = document.getElementById('btnSubmitEmergency');
-    
-    const clipboardHolder = document.getElementById('clipboardHolder');
-    const toastContainer = document.getElementById('toastContainer');
-
-    // --- INITIALIZATION ---
-    function init() {
-      populateSelect('empDept', DEPARTMENTS);
-      populateSelect('empRole', ROLES);
-      populateSelect('empProgram', PROGRAMS);
-      populateSelect('categoryDropdown', CATEGORIES);
-      populateSelect('taskDropdown', TASK_TYPES);
-
-      loginForm.addEventListener('submit', handleLogin);
-      document.getElementById('btnLogout').addEventListener('click', handleLogout);
-      
-      btnPunchIn.addEventListener('click', handlePunchIn);
-
-      btnStartTask.addEventListener('click', startTask);
-      btnPauseTask.addEventListener('click', pauseTask);
-      btnResumeTask.addEventListener('click', resumeTask);
-      btnStopTask.addEventListener('click', stopTask);
-      
-      btnStartBreak.addEventListener('click', () => startOther('break'));
-      btnStopBreak.addEventListener('click', stopOther);
-      btnStartEmergency.addEventListener('click', () => startOther('emergency'));
-      btnStopEmergency.addEventListener('click', stopOther);
-      
-      btnEodMail.addEventListener('click', () => sendEODMail(false));
-
-      emergencyReasonInput.addEventListener('input', () => {
-        btnSubmitEmergency.disabled = !emergencyReasonInput.value.trim();
-      });
-      btnSubmitEmergency.addEventListener('click', submitEmergencyReason);
-
-      document.addEventListener("visibilitychange", handleVisibilityChange);
-      
-      setInterval(mainTick, 1000);
-    }
-
-    // --- UTILS & TOASTS ---
-    function showToast(message, type = 'info') {
-      const toast = document.createElement('div');
-      const bgColor = type === 'error' ? 'bg-red-600' : (type === 'success' ? 'bg-green-600' : 'bg-blue-600');
-      toast.className = `${bgColor} text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 toast-enter toast-enter-active font-semibold`;
-      
-      const icon = type === 'error' ? '<i class="fa-solid fa-triangle-exclamation"></i>' : 
-                   (type === 'success' ? '<i class="fa-solid fa-check-circle"></i>' : '<i class="fa-solid fa-circle-info"></i>');
-      
-      toast.innerHTML = `${icon} <span>${message}</span>`;
-      toastContainer.appendChild(toast);
-      
-      setTimeout(() => {
-        toast.classList.remove('toast-enter-active');
-        setTimeout(() => toast.remove(), 300);
-      }, 4000);
-    }
-
-    function populateSelect(id, optionsArray) {
-      const select = document.getElementById(id);
-      optionsArray.forEach(opt => {
-        const option = document.createElement('option');
-        option.value = opt;
-        option.textContent = opt;
-        select.appendChild(option);
-      });
-    }
-
-    // Geo Date & Time Formatting
-    function formatTime(dateMs) {
-      if (!dateMs) return 'N/A';
-      return new Date(dateMs).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    }
-
-    function formatDate(dateMs) {
-      if (!dateMs) return 'N/A';
-      return new Date(dateMs).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
-    }
-
-    function getUserTimeZone() {
-      return Intl.DateTimeFormat().resolvedOptions().timeZone;
-    }
-
-    function formatDurationMs(ms) {
-      const diff = Math.max(0, ms);
-      const hours = Math.floor(diff / 3600000);
-      const minutes = Math.floor((diff % 3600000) / 60000);
-      const seconds = Math.floor((diff % 60000) / 1000);
-      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    }
-
-    // --- CORE TICK LOOP ---
-    function mainTick() {
-      if (!user) return;
-      const now = Date.now();
-
-      if (shiftStartTime) {
-        const elapsed = now - shiftStartTime;
-        const percentage = Math.min((elapsed / SHIFT_DURATION_MS) * 100, 100);
-        shiftProgressBar.style.width = `${percentage}%`;
-        
-        const h = Math.floor(elapsed / 3600000);
-        const m = Math.floor((elapsed % 3600000) / 60000);
-        const s = Math.floor((elapsed % 60000) / 1000);
-        shiftTimeText.innerHTML = `${h}h ${m.toString().padStart(2,'0')}m ${s.toString().padStart(2,'0')}s <span class="text-slate-400 font-normal">/ 9h 00m</span>`;
-      }
-
-      if (activeOther) {
-        liveDurationEl.textContent = formatDurationMs(now - activeOther.startTime);
-      } else if (activeTask && activeTask.isRunning) {
-        liveDurationEl.textContent = formatDurationMs(activeTask.accumulatedMs + (now - activeTask.lastStartTime));
-      }
-    }
-
-    // --- ACTIONS ---
-    function handleLogin(e) {
-      e.preventDefault();
-      user = { 
-        empId: document.getElementById('empId').value, 
-        name: document.getElementById('empName').value,
-        dept: document.getElementById('empDept').value,
-        role: document.getElementById('empRole').value,
-        program: document.getElementById('empProgram').value,
-        loginTime: Date.now() 
-      };
-      
-      loginView.classList.add('hidden');
-      mainView.classList.remove('hidden');
-      
-      headerUserName.textContent = `${user.name} (${user.empId})`;
-      headerDetails.textContent = `${user.dept} | ${user.role} | ${user.program}`;
-      
-      renderControls();
-      renderBanner();
-      renderLogs();
-      showToast(`Welcome back, ${user.name}!`, 'success');
-    }
-
-    function handlePunchIn() {
-      shiftStartTime = Date.now();
-      
-      // Update Date Display using local Geo time
-      shiftDateValue.textContent = `${formatDate(shiftStartTime)} (${getUserTimeZone()})`;
-      
-      btnPunchIn.classList.add('hidden');
-      shiftProgressContainer.classList.remove('hidden');
-      showToast("Shift Started successfully", "success");
-    }
-
-    function startTask() {
-      if (activeOther) return; 
-      
-      activeTask = {
-        name: taskDropdown.value,
-        category: categoryDropdown.value,
-        originalStartTime: Date.now(),
-        lastStartTime: Date.now(),
-        accumulatedMs: 0,
-        isRunning: true
-      };
-      renderControls();
-      renderBanner();
-    }
-
-    function pauseTask() {
-      if (activeTask && activeTask.isRunning) {
-        activeTask.accumulatedMs += Date.now() - activeTask.lastStartTime;
-        activeTask.isRunning = false;
-        renderControls();
-        renderBanner();
-      }
-    }
-
-    function resumeTask() {
-      if (activeOther) {
-        showToast("Please end your break or emergency before resuming the task.", "error");
-        return;
-      }
-      if (activeTask && !activeTask.isRunning) {
-        activeTask.lastStartTime = Date.now();
-        activeTask.isRunning = true;
-        renderControls();
-        renderBanner();
-      }
-    }
-
-    function stopTask() {
-      if (!activeTask) return;
-      
-      if (activeTask.isRunning) {
-        activeTask.accumulatedMs += Date.now() - activeTask.lastStartTime;
-      }
-      
-      logActivity(
-        'task', 
-        activeTask.name, 
-        activeTask.originalStartTime, 
-        Date.now(), 
-        "", 
-        activeTask.category, 
-        activeTask.accumulatedMs
-      );
-      
-      activeTask = null;
-      renderControls();
-      renderBanner();
-      showToast("Task logged successfully", "success");
-    }
-
-    function startOther(type) {
-      if (activeOther) return; 
-      
-      if (activeTask && activeTask.isRunning) {
-        pauseTask();
-      }
-
-      activeOther = { type, startTime: Date.now() };
-
-      if (type === 'break') {
-        breakTimeoutRef = setTimeout(() => {
-          handleAutoLogout(activeOther.startTime);
-        }, MAX_BREAK_MINUTES * 60 * 1000);
-      }
-      
-      renderControls();
-      renderBanner();
-    }
-
-    function stopOther() {
-      if (!activeOther) return;
-      
-      if (activeOther.type === 'break') {
-        clearTimeout(breakTimeoutRef);
-        logActivity('break', 'Break Time', activeOther.startTime, Date.now(), "", "Break");
-        activeOther = null;
-        renderControls();
-        renderBanner();
-        showToast("Break ended", "info");
-      } 
-      else if (activeOther.type === 'emergency') {
-        emergencyReasonInput.value = "";
-        btnSubmitEmergency.disabled = true;
-        emergencyModal.classList.remove('hidden');
-        emergencyModal.classList.add('flex');
-        emergencyReasonInput.focus();
-      }
-    }
-
-    function submitEmergencyReason() {
-      const reason = emergencyReasonInput.value;
-      logActivity('emergency', 'Emergency Leave', activeOther.startTime, Date.now(), reason, "Emergency");
-      
-      emergencyModal.classList.add('hidden');
-      emergencyModal.classList.remove('flex');
-      activeOther = null;
-      renderControls();
-      renderBanner();
-      showToast("Emergency recorded", "success");
-    }
-
-    function logActivity(type, name, startMs, endMs, details = "", category = "-", durationMs = null) {
-      const finalDurationMs = durationMs !== null ? durationMs : (endMs - startMs);
-      const newLog = {
-        id: Date.now(),
-        type,
-        category,
-        name,
-        startTime: startMs,
-        endTime: endMs,
-        duration: formatDurationMs(finalDurationMs),
-        details
-      };
-      logs.push(newLog);
-      renderLogs();
-    }
-
-    function handleVisibilityChange() {
-      if (document.visibilityState === 'visible' && activeOther?.type === 'break') {
-        stopOther(); 
-      }
-    }
-
-    // --- RENDERERS ---
-    function renderControls() {
-      const isOtherActive = activeOther !== null;
-      const isTaskActive = activeTask !== null;
-
-      categoryDropdown.disabled = isTaskActive;
-      taskDropdown.disabled = isTaskActive;
-      
-      if (isTaskActive) {
-        btnStartTask.classList.add('hidden');
-        taskActiveControls.classList.remove('hidden');
-        taskActiveControls.classList.add('flex');
-
-        if (activeTask.isRunning) {
-          btnPauseTask.classList.remove('hidden');
-          btnResumeTask.classList.add('hidden');
-        } else {
-          btnPauseTask.classList.add('hidden');
-          btnResumeTask.classList.remove('hidden');
         }
-        
-        btnStopTask.disabled = isOtherActive;
-        btnStopTask.classList.toggle('opacity-50', isOtherActive);
-      } else {
-        btnStartTask.classList.remove('hidden');
-        taskActiveControls.classList.add('hidden');
-        taskActiveControls.classList.remove('flex');
-        btnStartTask.disabled = isOtherActive; 
-      }
 
-      if (activeOther?.type === 'break') {
-        btnStartBreak.classList.add('hidden');
-        btnStopBreak.classList.remove('hidden');
-      } else {
-        btnStartBreak.classList.remove('hidden');
-        btnStopBreak.classList.add('hidden');
-        btnStartBreak.disabled = activeOther?.type === 'emergency';
-      }
+ 
 
-      if (activeOther?.type === 'emergency') {
-        btnStartEmergency.classList.add('hidden');
-        btnStopEmergency.classList.remove('hidden');
-      } else {
-        btnStartEmergency.classList.remove('hidden');
-        btnStopEmergency.classList.add('hidden');
-        btnStartEmergency.disabled = activeOther?.type === 'break';
-      }
-    }
+        function syncScroll(editorId) {
 
-    function renderBanner() {
-      activeBanner.className = "rounded-xl p-4 shadow-sm border flex items-center justify-between transition-all";
-      
-      if (activeOther) {
-        activeBanner.classList.remove('hidden');
-        activeBanner.classList.add('animate-pulse');
-        activeBannerStartTime.textContent = `Started at ${formatTime(activeOther.startTime)}`;
-        
-        if (activeOther.type === 'break') {
-          activeBanner.classList.add('bg-amber-50', 'border-amber-200', 'text-amber-800');
-          activeBannerIconContainer.innerHTML = `<i class="fa-solid fa-mug-hot animate-spin-slow"></i>`;
-          activeBannerText.textContent = `Currently Active: On Break`;
-        } else {
-          activeBanner.classList.add('bg-red-50', 'border-red-200', 'text-red-800');
-          activeBannerIconContainer.innerHTML = `<i class="fa-solid fa-truck-medical animate-spin-slow"></i>`;
-          activeBannerText.textContent = `Currently Active: Emergency Time`;
+            const textarea = document.getElementById(`${editorId}-code`);
+
+            const linesContainer = document.getElementById(`${editorId}-lines`);
+
+            linesContainer.scrollTop = textarea.scrollTop;
+
         }
-      } 
-      else if (activeTask) {
-        activeBanner.classList.remove('hidden');
-        activeBannerStartTime.textContent = `Original Start: ${formatTime(activeTask.originalStartTime)}`;
-        
-        if (activeTask.isRunning) {
-          activeBanner.classList.add('animate-pulse', 'bg-blue-50', 'border-blue-200', 'text-blue-800');
-          activeBannerIconContainer.innerHTML = `<i class="fa-solid fa-play animate-spin-slow"></i>`;
-          activeBannerText.textContent = `Currently Tracking: ${activeTask.name}`;
-          liveDurationEl.classList.remove('text-slate-500');
-        } else {
-          activeBanner.classList.add('bg-slate-100', 'border-slate-300', 'text-slate-600');
-          activeBannerIconContainer.innerHTML = `<i class="fa-solid fa-pause"></i>`;
-          activeBannerText.textContent = `Task Paused: ${activeTask.name}`;
-          liveDurationEl.textContent = formatDurationMs(activeTask.accumulatedMs); 
-          liveDurationEl.classList.add('text-slate-500');
+
+ 
+
+        // Initialize default line numbers
+
+        updateLines('prev');
+
+        updateLines('curr');
+
+ 
+
+        // --- Core Analysis Logic ---
+
+ 
+
+        function escapeHtml(unsafe) {
+
+            return unsafe
+
+                 .replace(/&/g, "&amp;")
+
+                 .replace(/</g, "&lt;")
+
+                 .replace(/>/g, "&gt;")
+
+                 .replace(/"/g, "&quot;")
+
+                 .replace(/'/g, "&#039;");
+
         }
-      } 
-      else {
-        activeBanner.classList.add('hidden');
-      }
-    }
 
-    function renderLogs() {
-      document.getElementById('logCount').textContent = `${logs.length} Entries`;
+ 
 
-      if (logs.length === 0) {
-        document.getElementById('emptyLogState').classList.remove('hidden');
-        document.getElementById('logTable').classList.add('hidden');
-        logTableBody.innerHTML = '';
-        return;
-      }
+        function stripHtmlTags(htmlStr) {
 
-      document.getElementById('emptyLogState').classList.add('hidden');
-      document.getElementById('logTable').classList.remove('hidden');
+            const doc = new DOMParser().parseFromString(htmlStr, 'text/html');
 
-      logTableBody.innerHTML = [...logs].reverse().map(log => {
-        let badgeClass = '';
-        if (log.type === 'task') badgeClass = 'bg-blue-100 text-blue-700';
-        if (log.type === 'break') badgeClass = 'bg-amber-100 text-amber-700';
-        if (log.type === 'emergency') badgeClass = 'bg-red-100 text-red-700';
+            return doc.body.textContent || "";
 
-        let detailsHtml = log.details ? `<p class="text-xs text-slate-500 font-normal mt-1 italic">"${log.details}"</p>` : '';
+        }
 
-        return `
-          <tr class="bg-white border-b border-slate-50 hover:bg-slate-50 transition-colors">
-            <td class="px-6 py-4">
-              <span class="px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${badgeClass}">
-                ${log.type}
-              </span>
-            </td>
-            <td class="px-6 py-4 text-xs font-semibold text-slate-600">${log.category}</td>
-            <td class="px-6 py-4 font-medium text-slate-900">
-              ${log.name}
-              ${detailsHtml}
-            </td>
-            <td class="px-6 py-4 text-slate-600">${formatTime(log.startTime)}</td>
-            <td class="px-6 py-4 text-slate-600">${formatTime(log.endTime)}</td>
-            <td class="px-6 py-4 font-mono font-medium text-slate-800">${log.duration}</td>
-          </tr>
-        `;
-      }).join('');
-    }
+ 
 
-    // --- HTML MAIL GENERATION & CLIPBOARD LOGIC ---
-    function copyHtmlToClipboard(htmlContent) {
-      clipboardHolder.innerHTML = htmlContent;
-      
-      const range = document.createRange();
-      range.selectNodeContents(clipboardHolder);
-      
-      const selection = window.getSelection();
-      selection.removeAllRanges();
-      selection.addRange(range);
-      
-      let success = false;
-      try {
-        success = document.execCommand('copy');
-      } catch (err) {
-        console.error('Failed to copy html table:', err);
-      }
-      
-      selection.removeAllRanges();
-      clipboardHolder.innerHTML = '';
-      return success;
-    }
+        function getWordCount(text) {
 
-    function sendEODMail(isAutoLogout = false, breakStartMs = null) {
-      if (!user) return;
-      
-      const logoutTime = Date.now();
-      const totalLoggedMs = logoutTime - user.loginTime;
-      const totalLoggedHours = formatDurationMs(totalLoggedMs);
-      
-      // Build Rich HTML Table Document
-      let html = `<div style="font-family: Arial, sans-serif; color: #333; max-width: 800px;">`;
-      
-      if (isAutoLogout) {
-        html += `<div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 12px; margin-bottom: 20px;">
-          <strong style="color: #b91c1c;">⚠️ SYSTEM ALERT:</strong> Auto-logged out due to break exceeding ${MAX_BREAK_MINUTES} minutes.<br>
-          Break Started at: ${formatTime(breakStartMs)}
-        </div>`;
-      }
+            const words = text.trim().split(/\s+/);
 
-      html += `<h2 style="color: #2563eb; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">Employee EOD Report</h2>`;
-      
-      // First Table - Including Date and Timezone
-      html += `
-        <table border="1" cellpadding="10" cellspacing="0" style="border-collapse: collapse; width: 100%; margin-bottom: 30px; border-color: #cbd5e1;">
-          <tr><th style="background-color: #f8fafc; text-align: left; width: 30%;">Date</th><td>${formatDate(user.loginTime)}</td></tr>
-          <tr><th style="background-color: #f8fafc; text-align: left;">Timezone</th><td>${getUserTimeZone()}</td></tr>
-          <tr><th style="background-color: #f8fafc; text-align: left;">Emp ID</th><td>${user.empId}</td></tr>
-          <tr><th style="background-color: #f8fafc; text-align: left;">Emp Name</th><td>${user.name}</td></tr>
-          <tr><th style="background-color: #f8fafc; text-align: left;">Program</th><td>${user.program}</td></tr>
-          <tr><th style="background-color: #f8fafc; text-align: left;">Department</th><td>${user.dept}</td></tr>
-          <tr><th style="background-color: #f8fafc; text-align: left;">Role</th><td>${user.role}</td></tr>
-          <tr><th style="background-color: #f8fafc; text-align: left;">Login Time</th><td>${formatTime(user.loginTime)}</td></tr>
-          <tr><th style="background-color: #f8fafc; text-align: left;">Logout Time</th><td>${formatTime(logoutTime)}</td></tr>
-          <tr><th style="background-color: #f8fafc; text-align: left;">Total Logged Hours</th><td><strong>${totalLoggedHours}</strong></td></tr>
-        </table>
-      `;
+            return words[0] === "" ? 0 : words.length;
 
-      html += `<h2 style="color: #2563eb; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">Activity Logs</h2>`;
-      
-      // Second Table
-      html += `
-        <table border="1" cellpadding="10" cellspacing="0" style="border-collapse: collapse; width: 100%; border-color: #cbd5e1;">
-          <thead>
-            <tr style="background-color: #f8fafc;">
-              <th style="text-align: left;">Category</th>
-              <th style="text-align: left;">Task / Activity</th>
-              <th style="text-align: center;">Start Time</th>
-              <th style="text-align: center;">End Time</th>
-              <th style="text-align: center;">Total Duration</th>
-            </tr>
-          </thead>
-          <tbody>
-      `;
+        }
 
-      if(logs.length === 0) {
-        html += `<tr><td colspan="5" style="text-align: center; color: #64748b;">No activities logged today</td></tr>`;
-      } else {
-        logs.forEach(log => {
-          let taskNameDisplay = log.name;
-          if (log.details) {
-            taskNameDisplay += `<br><span style="color: #64748b; font-size: 0.9em; font-style: italic;">└─ ${log.details}</span>`;
-          }
-          
-          html += `
-            <tr>
-              <td>${log.category || "-"}</td>
-              <td>${taskNameDisplay}</td>
-              <td style="text-align: center; white-space: nowrap;">${formatTime(log.startTime)}</td>
-              <td style="text-align: center; white-space: nowrap;">${formatTime(log.endTime)}</td>
-              <td style="text-align: center; font-weight: bold;">${log.duration}</td>
-            </tr>
-          `;
-        });
-      }
+ 
 
-      html += `</tbody></table></div>`;
+        function extractMetadata(htmlStr) {
 
-      // Copy to clipboard
-      const copied = copyHtmlToClipboard(html);
-      
-      if (copied) {
-        showToast("HTML Report Copied! Please Paste (Ctrl+V) into your email body.", "success");
-      } else {
-        showToast("Failed to copy report to clipboard automatically.", "error");
-      }
+            const doc = new DOMParser().parseFromString(htmlStr, 'text/html');
 
-      // Open email client with instruction in body
-      const subject = encodeURIComponent(`EOD Report: ${user.name} (${user.empId})${isAutoLogout ? ' - AUTO LOGOUT ALERT' : ''}`);
-      const fallbackBody = encodeURIComponent(`Please Paste (Ctrl+V or Cmd+V) the copied EOD Report Table right here.`);
-      
-      setTimeout(() => {
-        window.location.href = `mailto:${EMAILS}?subject=${subject}&body=${fallbackBody}`;
-      }, 500); // Give user a moment to read the toast
-    }
+            let author = "Not available";
 
-    function handleAutoLogout(breakStartMs) {
-      logActivity('break', 'Break Exceeded limit', breakStartMs, Date.now(), "Auto-logout triggered", "Break");
-      sendEODMail(true, breakStartMs);
-      
-      activeTask = null;
-      activeOther = null;
-      user = null;
-      logs = [];
-      shiftStartTime = null;
-      
-      loginView.classList.remove('hidden');
-      mainView.classList.add('hidden');
-      btnPunchIn.classList.remove('hidden');
-      shiftProgressContainer.classList.add('hidden');
-    }
+            let modifiedBy = "Not available";
 
-    function handleLogout() {
-      if (activeTask || activeOther) {
-        showToast("Please finish or end your current active activities before logging out.", "error");
-        return;
-      }
-      sendEODMail(false);
-      
-      user = null;
-      logs = [];
-      shiftStartTime = null;
-      
-      loginView.classList.remove('hidden');
-      mainView.classList.add('hidden');
-      btnPunchIn.classList.remove('hidden');
-      shiftProgressContainer.classList.add('hidden');
-    }
+           
 
-    // Run Initialization
-    init();
+            const authorMeta = doc.querySelector('meta[name="author"]');
 
-  </script>
+            if (authorMeta) author = authorMeta.getAttribute('content');
+
+           
+
+            const generatorMeta = doc.querySelector('meta[name="generator"]');
+
+            if (generatorMeta) modifiedBy = generatorMeta.getAttribute('content');
+
+ 
+
+            return { author, modifiedBy };
+
+        }
+
+ 
+
+        // Regex helpers for Key Observations
+
+        const regexCurrency = /[\$\£\€\₹]|\b(USD|EUR|INR|GBP|Rs\.?)\b/gi;
+
+        const regexDate = /\b\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}\b|\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{1,2}(?:st|nd|rd|th)?,\s+\d{4}\b/gi;
+
+        const regexImage = /<img[^>]+>/gi;
+
+ 
+
+        function analyzeObservations(prevHTML, currHTML) {
+
+            const observations = [];
+
+           
+
+            // 1. Structural Shifts (Paragraphs)
+
+            const prevPCount = (prevHTML.match(/<p>/gi) || []).length;
+
+            const currPCount = (currHTML.match(/<p>/gi) || []).length;
+
+            if (currPCount > prevPCount) {
+
+                observations.push({ icon: 'align-left', color: 'text-green-500', text: `Added ${currPCount - prevPCount} new paragraph(s), expanding the content structure.` });
+
+            } else if (prevPCount > currPCount) {
+
+                observations.push({ icon: 'align-left', color: 'text-red-500', text: `Removed ${prevPCount - currPCount} paragraph(s), condensing the structure.` });
+
+            }
+
+ 
+
+            // 2. Pricing or Currency changes
+
+            const prevCurrencies = prevHTML.match(regexCurrency) || [];
+
+            const currCurrencies = currHTML.match(regexCurrency) || [];
+
+            if (currCurrencies.length > prevCurrencies.length) {
+
+                observations.push({ icon: 'coins', color: 'text-yellow-600', text: 'New pricing or currency information was added to the document.' });
+
+            } else if (prevCurrencies.length > currCurrencies.length) {
+
+                observations.push({ icon: 'coins', color: 'text-yellow-600', text: 'Pricing or currency information was removed or altered.' });
+
+            }
+
+ 
+
+            // 3. Timeline / Dates
+
+            const prevDates = prevHTML.match(regexDate) || [];
+
+            const currDates = currHTML.match(regexDate) || [];
+
+            if (currDates.length > prevDates.length) {
+
+                observations.push({ icon: 'calendar', color: 'text-blue-500', text: 'New dates or timeline information have been inserted.' });
+
+            }
+
+ 
+
+            // 4. Media / Links
+
+            const prevImg = (prevHTML.match(regexImage) || []).length;
+
+            const currImg = (currHTML.match(regexImage) || []).length;
+
+            if (currImg !== prevImg) {
+
+                observations.push({ icon: 'image', color: 'text-purple-500', text: `Image count changed from ${prevImg} to ${currImg}.` });
+
+            }
+
+ 
+
+            // Fallback if no specific observations
+
+            if (observations.length === 0) {
+
+                observations.push({ icon: 'file-text', color: 'text-gray-500', text: 'Modifications are primarily textual or minor formatting updates.' });
+
+            }
+
+ 
+
+            return observations;
+
+        }
+
+ 
+
+        // Improved Line-by-Line Diff Algorithm (Bidirectional Lookahead)
+
+        function computeLineDiff(prevLines, currLines) {
+
+            const diffLeft = [];
+
+            const diffRight = [];
+
+           
+
+            let i = 0, j = 0;
+
+            let leftLineNum = 1, rightLineNum = 1;
+
+            const maxLookahead = 50; // Deep lookahead for better matching
+
+ 
+
+            while (i < prevLines.length || j < currLines.length) {
+
+                const pLine = prevLines[i] !== undefined ? prevLines[i] : null;
+
+                const cLine = currLines[j] !== undefined ? currLines[j] : null;
+
+ 
+
+                if (pLine === cLine && pLine !== null) {
+
+                    diffLeft.push({ type: 'unchanged', text: escapeHtml(pLine), line: leftLineNum++ });
+
+                    diffRight.push({ type: 'unchanged', text: escapeHtml(cLine), line: rightLineNum++ });
+
+                    i++; j++;
+
+                } else {
+
+                    let addedOffset = -1;
+
+                    for(let k = 1; k < maxLookahead && (j+k) < currLines.length; k++) {
+
+                        if (pLine === currLines[j+k]) { addedOffset = k; break; }
+
+                    }
+
+                   
+
+                    let removedOffset = -1;
+
+                    for(let k = 1; k < maxLookahead && (i+k) < prevLines.length; k++) {
+
+                        if (cLine === prevLines[i+k]) { removedOffset = k; break; }
+
+                    }
+
+ 
+
+                    if (addedOffset !== -1 && (removedOffset === -1 || addedOffset <= removedOffset)) {
+
+                        // Lines were added
+
+                        for(let k=0; k<addedOffset; k++) {
+
+                            diffLeft.push({ type: 'empty', text: '', line: '' });
+
+                            diffRight.push({ type: 'added', text: escapeHtml(currLines[j]), line: rightLineNum++ });
+
+                            j++;
+
+                        }
+
+                    } else if (removedOffset !== -1) {
+
+                        // Lines were removed
+
+                        for(let k=0; k<removedOffset; k++) {
+
+                            diffLeft.push({ type: 'removed', text: escapeHtml(prevLines[i]), line: leftLineNum++ });
+
+                            diffRight.push({ type: 'empty', text: '', line: '' });
+
+                            i++;
+
+                        }
+
+                    } else {
+
+                        // Line completely modified or one array ended
+
+                        if (pLine !== null) {
+
+                            diffLeft.push({ type: 'removed', text: escapeHtml(pLine), line: leftLineNum++ });
+
+                            i++;
+
+                        } else {
+
+                            diffLeft.push({ type: 'empty', text: '', line: '' });
+
+                        }
+
+                       
+
+                        if (cLine !== null) {
+
+                            diffRight.push({ type: 'added', text: escapeHtml(cLine), line: rightLineNum++ });
+
+                            j++;
+
+                        } else {
+
+                            diffRight.push({ type: 'empty', text: '', line: '' });
+
+                        }
+
+                    }
+
+                }
+
+            }
+
+            return { diffLeft, diffRight };
+
+        }
+
+ 
+
+        function calculateScore(html, textLength) {
+
+            let score = 5;
+
+            if (textLength > 50) score += 2;
+
+            if (html.includes('<h1>') || html.includes('<h2>')) score += 1;
+
+            if (html.includes('<p>')) score += 1;
+
+            if (html.match(/<[^>]+style="[^"]+"/)) score -= 1;
+
+            return Math.min(Math.max(score, 0), 10);
+
+        }
+
+ 
+
+        function analyzeChanges() {
+
+            const prevRaw = document.getElementById('prev-code').value;
+
+            const currRaw = document.getElementById('curr-code').value;
+
+ 
+
+            document.getElementById('results').classList.add('hidden');
+
+            document.getElementById('loading').classList.remove('hidden');
+
+ 
+
+            setTimeout(() => {
+
+                // 1. Content Stats
+
+                const prevText = stripHtmlTags(prevRaw);
+
+                const currText = stripHtmlTags(currRaw);
+
+                const prevWords = getWordCount(prevText);
+
+                const currWords = getWordCount(currText);
+
+                const diffWords = currWords - prevWords;
+
+ 
+
+                document.getElementById('stat-prev-words').textContent = prevWords;
+
+                document.getElementById('stat-curr-words').textContent = currWords;
+
+               
+
+                const addedEst = diffWords > 0 ? diffWords + Math.floor(prevWords * 0.05) : Math.floor(currWords * 0.05);
+
+                const removedEst = diffWords < 0 ? Math.abs(diffWords) + Math.floor(currWords * 0.05) : Math.floor(prevWords * 0.05);
+
+               
+
+                document.getElementById('stat-added').textContent = `+${addedEst}`;
+
+                document.getElementById('stat-removed').textContent = `-${removedEst}`;
+
+ 
+
+                // 2. Observations
+
+                const observations = analyzeObservations(prevRaw, currRaw);
+
+                const obsList = document.getElementById('observations-list');
+
+                obsList.innerHTML = '';
+
+                observations.forEach(obs => {
+
+                    const li = document.createElement('li');
+
+                    li.className = "flex items-start gap-3 text-gray-700 bg-gray-50 p-3 rounded-lg";
+
+                    li.innerHTML = `<i data-lucide="${obs.icon}" class="w-5 h-5 ${obs.color} shrink-0 mt-0.5"></i> <span>${obs.text}</span>`;
+
+                    obsList.appendChild(li);
+
+                });
+
+ 
+
+                // 3. Smart Summary
+
+                const actionText = diffWords > 0 ? "expanded" : (diffWords < 0 ? "reduced" : "modified");
+
+                const summaryList = document.getElementById('smart-summary-list');
+
+                const scorePrev = calculateScore(prevRaw, prevWords);
+
+                const scoreCurr = calculateScore(currRaw, currWords);
+
+ 
+
+                summaryList.innerHTML = `
+
+                    <li>The document has been <span class="font-bold text-blue-600">${actionText}</span> compared to the previous version.</li>
+
+                    <li>Likely updated to <span class="font-semibold">${observations[0]?.text.toLowerCase() || 'refine the content structure and wording.'}</span></li>
+
+                    <li>Overall structure and readability score is now <span class="font-bold text-blue-600">${scoreCurr}/10</span>.</li>
+
+                `;
+
+ 
+
+                // 4. Metadata
+
+                const metaPrev = extractMetadata(prevRaw);
+
+                const metaCurr = extractMetadata(currRaw);
+
+                document.getElementById('meta-author').textContent = metaCurr.author !== "Not available" ? metaCurr.author : metaPrev.author;
+
+                document.getElementById('meta-modified').textContent = metaCurr.modifiedBy !== "Not available" ? metaCurr.modifiedBy : metaPrev.modifiedBy;
+
+ 
+
+                // 5. Scoring & Recommendations
+
+                document.getElementById('score-prev').textContent = `${scorePrev}/10`;
+
+                document.getElementById('score-curr').textContent = `${scoreCurr}/10`;
+
+               
+
+                setTimeout(() => {
+
+                    document.getElementById('score-bar-prev').style.width = `${scorePrev * 10}%`;
+
+                    document.getElementById('score-bar-curr').style.width = `${scoreCurr * 10}%`;
+
+                }, 100);
+
+ 
+
+                let recommendation = "Content looks solid. Ensure HTML semantics are maintained.";
+
+                if (scoreCurr < 6) recommendation = "Consider using semantic HTML tags (h1, h2, p) to improve structure and readability.";
+
+                else if (scoreCurr > scorePrev) recommendation = "Great job! The structural quality has improved in this version.";
+
+                document.getElementById('score-recommendation').textContent = recommendation;
+
+ 
+
+                // 6. Detailed Diff View (Perfect Sync Rendering)
+
+                const prevLines = prevRaw.split('\n');
+
+                const currLines = currRaw.split('\n');
+
+                const diffData = computeLineDiff(prevLines, currLines);
+
+               
+
+                const container = document.getElementById('diff-unified-container');
+
+                let diffHtml = '';
+
+ 
+
+                for(let i = 0; i < diffData.diffLeft.length; i++) {
+
+                    const left = diffData.diffLeft[i];
+
+                    const right = diffData.diffRight[i];
+
+ 
+
+                    // Styling logic for Left Side (Previous)
+
+                    let leftNumClass = 'bg-[#1e1e1e] text-gray-500 border-l-2 border-transparent';
+
+                    let leftContentClass = '';
+
+                    if (left.type === 'removed') {
+
+                        leftNumClass = 'bg-[#f85149]/10 text-[#ffb3b3] border-l-2 border-[#f85149]';
+
+                        leftContentClass = 'bg-[#f85149]/20 text-[#ffb3b3] line-through decoration-[#f85149]/50';
+
+                    } else if (left.type === 'empty') {
+
+                        leftNumClass = 'bg-gray-800/40 border-l-2 border-transparent';
+
+                        leftContentClass = 'bg-gray-800/40';
+
+                    }
+
+ 
+
+                    // Styling logic for Right Side (Current)
+
+                    let rightNumClass = 'bg-[#1e1e1e] text-gray-500 border-l-2 border-transparent';
+
+                    let rightContentClass = '';
+
+                    if (right.type === 'added') {
+
+                        rightNumClass = 'bg-[#2ea043]/10 text-[#a6f3a6] border-l-2 border-[#2ea043]';
+
+                        rightContentClass = 'bg-[#2ea043]/20 text-[#a6f3a6]';
+
+                    } else if (right.type === 'empty') {
+
+                        rightNumClass = 'bg-gray-800/40 border-l-2 border-transparent';
+
+                        rightContentClass = 'bg-gray-800/40';
+
+                    }
+
+ 
+
+                    // Building a unified Flex Row to guarantee equal heights
+
+                    diffHtml += `
+
+                    <div class="flex w-full min-h-[1.5rem] border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors">
+
+                        <!-- Left Split -->
+
+                        <div class="w-1/2 flex border-r border-gray-600">
+
+                            <div class="w-10 sm:w-12 shrink-0 text-right pr-2 py-0.5 select-none border-r border-gray-700 ${leftNumClass}">${left.line || ''}</div>
+
+                            <div class="flex-1 px-2 py-0.5 whitespace-pre-wrap break-all ${leftContentClass}">${left.text || ' '}</div>
+
+                        </div>
+
+                        <!-- Right Split -->
+
+                        <div class="w-1/2 flex">
+
+                            <div class="w-10 sm:w-12 shrink-0 text-right pr-2 py-0.5 select-none border-r border-gray-700 ${rightNumClass}">${right.line || ''}</div>
+
+                            <div class="flex-1 px-2 py-0.5 whitespace-pre-wrap break-all ${rightContentClass}">${right.text || ' '}</div>
+
+                        </div>
+
+                    </div>
+
+                    `;
+
+                }
+
+               
+
+                container.innerHTML = diffHtml;
+
+                lucide.createIcons();
+
+               
+
+                // Show final result
+
+                document.getElementById('loading').classList.add('hidden');
+
+                document.getElementById('results').classList.remove('hidden');
+
+               
+
+            }, 800);
+
+        }
+
+    </script>
+
 </body>
-</html>
 
+</html>
